@@ -30,7 +30,7 @@ aq.list_laqn_prebondst <- importKCL(site=site.code,
 save(aq.list_laqn_prebondst, file="aq.list_laqn_raw_prebondst.RData")
 
 # Duplicates --------------------------------------------------------------
-load("aq.list_laqn_raw_prebondst.RData")
+load(here("data", "raw", "aq.list_laqn_raw_prebondst.RData"))
 
 aq.list_laqn <- split(aq.list_laqn_prebondst, aq.list_laqn_prebondst$code)
 
@@ -99,7 +99,10 @@ count_missing_daily <- function(aq.dat){
 }
 
 valid_sites <- lapply(aq.list_validspan, FUN=count_missing_daily)
+aq.list_prebondst_valid <- aq.list_validspan[unlist(valid_sites)]
 
+
+save(aq.list_prebondst_valid, file=here("data", "processed", "aq.list_prebondst_valid.RData"))
 
 
 
