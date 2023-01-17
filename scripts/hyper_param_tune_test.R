@@ -3,12 +3,14 @@ library(openair)
 library(worldmet)
 library(deweather)
 library(mlrMBO)
+library(dplyr)
 load(here("data", "processed", "aq.list_prebondst_valid.RData"))
 
 dflist <- aq.list_prebondst_valid
 df <- dflist[[1]]
 
-heathrow_meteo <- importNOAA(year=2019:2022)
+#heathrow_meteo <- importNOAA(year=2019:2022)
+load(here("data", "raw", "heathrow_meteo.RData"))
 meteo_vars <- c("air_temp", 
                 "wd", 
                 "ws",
@@ -28,58 +30,39 @@ meteo_conf <- heathrow_meteo %>% select(date,
 dfm <- merge(x=df, y=meteo_conf, by="date", all.x=TRUE)
 dfm <- prepData(dfm, add=c("hour", "trend", "weekday", "jday"))
 
-dfmstar <- dfm %>% select(-site, -code)
-dfm_mat <- model.matrix(no2 ~ . -1 -date -nox -pm10,
-                        data=dfmstar)
-dfm_xgb <- xgb.DMatrix(data = dfm_mat, 
-                       label = na.omit(dfmstar)$no2)
+dfmstar <- dfm %>% select(-site, -code, -date, -nox, -pm10)
+dfm_mat <- model.matrix(no2 ~ . -1,
+                        data=na.omit(dfmstar))
+dfmy <- with(na.omit(dfmstar), no2)
 L <- 168
 
-#obj.coefdeterm <- function(preds, dtrain){
-  labels <- getinfo(dtrain, "label")
-  SStot <- sum((labels - mean(labels))^2)
-  grad <- rep(2*sum(labels-preds), times=length(labels))/SStot
-  hess <- -rep(2, times=length(labels))/SStot
-  return(list(grad = grad, hess = hess))
-}
+source(here("scripts", "hv.block_folds.R"))
+cv.folds <- hv.block_folds(na.omit(dfmstar), L)
+test.folds <- cv.folds$test_id
+train.folds <- cv.folds$train_id
 
-#feval.RMSE <- function(preds, dtrain) {
-  labels <- getinfo(dtrain, "label")
-  u = (preds-labels)^2
-  err <- sqrt(sum(u) / length(u))
-  return(list(metric = "RMSE", value = err))
-}
-
+source(here("scripts", "gbm.cverr.R"))
 obj.fun <- makeSingleObjectiveFunction(
-  name = "xgb_cv_bayes",
-  fn = function(x){
+  name = "gbm_cv_bayes",
+  fn = function(P){
     set.seed(42)
-    cv <- xgb.cv(params = list(
-      booster          = "gbtree",
-      learning_rate    = x["learning_rate"],
-      max_depth        = x["max_depth"],
-      subsample        = x["subsample"],
-      colsample_bytree = x["colsample_bytree"],
-      objective = "reg:squarederror",
-      eval_metric = "rmse"),
-      data = dfm_xgb, ## must set in global.Env()
-      nround = 7000, ## Set this large and use early stopping
-      nthread = 26, ## Adjust based on your machine
-      folds = hv.block_folds(dfm_xgb, L, 5)$test_id,
-      train_folds = hv.block_folds(dfm_xgb, L, 5)$train_id,
-      prediction = FALSE,
-      showsd = TRUE,
-      early_stopping_rounds = 25, ## If evaluation metric does not improve on out-of-fold sample for 25 rounds, stop
-      verbose = 1,
-      print_every_n = 500)
-    
-    cv$evaluation_log %>% pull(4) %>% min  ## column 4 is the eval metric here, 
+    gbm.cverr(x = dfm_mat,
+              y = dfmy,
+              distribution = 'gaussian',
+              cv.test.folds = test.folds,
+              cv.train.folds = train.folds,
+              interaction.depth = P["interaction.depth"],
+              n.minobsinnode = P["n.minobsinnode"],
+              shrinkage = P["shrinkage"],
+              bag.fraction = P["bag.fraction"],
+              n.trees = 100
+    )
   },
   par.set = makeParamSet(
-    makeNumericParam("learning_rate",          lower = 0.005, upper = 0.01),
-    makeIntegerParam("max_depth",              lower = 2,      upper = 10),
-    makeNumericParam("subsample",              lower = 0.20,  upper = .8),
-    makeNumericParam("colsample_bytree",       lower = 0.20,  upper = .8)
+    makeNumericParam("shrinkage",                      lower = 0.005, upper = 0.01),
+    makeIntegerParam("interaction.depth",              lower = 2,     upper = 10),
+    makeIntegerParam("n.minobsinnode",                 lower = 5,     upper = 15),
+    makeNumericParam("bag.fraction",                   lower = 0.5,   upper = 0.9)
   ),
   minimize = TRUE
 )
@@ -95,7 +78,7 @@ do_bayes <- function(n_design = NULL, opt_steps = NULL, of = obj.fun, seed = 42)
   
   ## kriging with a matern(3,2) covariance function is the default surrogate model for numerical domains
   ## but if you wanted to override this you could modify the makeLearner() call below to define your own
-  ## GP surrogate model with more or lesss smoothness, or use an entirely different method
+  ## GP surrogate model with more or less smoothness, or use an entirely different method
   run <- mbo(fun = of,
              design = des,
              learner = makeLearner("regr.km",
