@@ -1,5 +1,5 @@
 hv.block_folds <- function(obs, L, nfolds=10) {
-  
+  #https://github.com/vcerqueira/blog/tree/main/src
   nobs <- NROW(obs)
   indices <- 1:nobs
   f <- cut(seq_len(NROW(obs)), breaks = nfolds, labels = FALSE) 
