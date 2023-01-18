@@ -59,10 +59,10 @@ obj.fun <- makeSingleObjectiveFunction(
     )
   },
   par.set = makeParamSet(
-    makeNumericParam("shrinkage",                      lower = 0.005, upper = 0.01),
-    makeIntegerParam("interaction.depth",              lower = 2,     upper = 10),
+    makeNumericParam("shrinkage",                      lower = 0.001, upper = 0.5),
+    makeIntegerParam("interaction.depth",              lower = 1,     upper = 10),
     makeIntegerParam("n.minobsinnode",                 lower = 5,     upper = 15),
-    makeNumericParam("bag.fraction",                   lower = 0.5,   upper = 0.9)
+    makeNumericParam("bag.fraction",                   lower = 0.5,   upper = 1)
   ),
   minimize = TRUE
 )
