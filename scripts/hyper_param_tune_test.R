@@ -36,10 +36,13 @@ dfm_mat <- model.matrix(no2 ~ . -1,
 dfmy <- with(na.omit(dfmstar), no2)
 L <- 168
 
-source(here("scripts", "hv.block_folds.R"))
-cv.folds <- hv.block_folds(na.omit(dfmstar), L)
-test.folds <- cv.folds$test_id
-train.folds <- cv.folds$train_id
+source(here("scripts", "hvblockedfolds.R"))
+cv.folds <- hvblockedfolds(na.omit(dfmstar), 
+                           fix.fraction = 0.25,
+                           block.size = 48,
+                           nfolds = 5)
+test.folds <- cv.folds$test.id
+train.folds <- cv.folds$train.id
 
 source(here("scripts", "gbm.cverr.R"))
 obj.fun <- makeSingleObjectiveFunction(
@@ -55,7 +58,8 @@ obj.fun <- makeSingleObjectiveFunction(
               n.minobsinnode = P["n.minobsinnode"],
               shrinkage = P["shrinkage"],
               bag.fraction = P["bag.fraction"],
-              n.trees = 100
+              n.trees = 100,
+              n.cores = 3
     )
   },
   par.set = makeParamSet(
@@ -76,9 +80,6 @@ do_bayes <- function(n_design = NULL, opt_steps = NULL, of = obj.fun, seed = 42)
   control <- makeMBOControl() %>%
     setMBOControlTermination(., iters = opt_steps)
   
-  ## kriging with a matern(3,2) covariance function is the default surrogate model for numerical domains
-  ## but if you wanted to override this you could modify the makeLearner() call below to define your own
-  ## GP surrogate model with more or less smoothness, or use an entirely different method
   run <- mbo(fun = of,
              design = des,
              learner = makeLearner("regr.km",
@@ -91,11 +92,6 @@ do_bayes <- function(n_design = NULL, opt_steps = NULL, of = obj.fun, seed = 42)
   return(run)
 }
 
-
-des <- generateDesign(n=42,
-                      par.set = getParamSet(obj.fun),
-                      fun = lhs::randomLHS)
-
-runs <- do_bayes(n_design = 15, of = obj.fun, opt_steps = 10, seed = 42)
+runs <- do_bayes(n_design = 42, of = obj.fun, opt_steps = 10, seed = 42)
 
 save(runs, file=here("results", "hyper_param_tune_test.RData"))

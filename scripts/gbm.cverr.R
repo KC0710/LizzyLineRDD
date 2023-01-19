@@ -261,7 +261,7 @@ gbm.cverr <- function(
     err <- NULL
     
     if(distrb == 'gaussian'){
-      err <- sum(wt * (yobs - fx)^2) / sum(wt)
+      err <- sum(wt * (yobs - fx)^2) / sum(wt) #RMSE
     }
     
     if(distrb == 'adaboost'){
@@ -286,7 +286,7 @@ gbm.cverr <- function(
   }
   
   ##############################################################################
-  ## Cross-validate each combination of metaparameters
+  ## Cross-validate for a given combination of metaparameters
   ##############################################################################
   
   res <- function(nfolds){
