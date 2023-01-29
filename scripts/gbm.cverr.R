@@ -261,7 +261,7 @@ gbm.cverr <- function(
     err <- NULL
     
     if(distrb == 'gaussian'){
-      err <- sum(wt * (yobs - fx)^2) / sum(wt) #RMSE
+      err <- sum(wt * (yobs - fx)^2) / sum(wt)
     }
     
     if(distrb == 'adaboost'){
