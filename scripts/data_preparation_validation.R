@@ -26,7 +26,7 @@ KCLdata <- preprocess(KCL_list_files, llub, ullb)
 AQEdata <- preprocess(AQE_list_files, llub, ullb)
 
 save(KCLdata, file=here("data", "processed", "KCLdata_preprocessed.RData"))
-save(AQEdata, file=here("data", "processed", "KCLdata_preprocessed.RData"))
+save(AQEdata, file=here("data", "processed", "AQEdata_preprocessed.RData"))
 
 lizzy_line_opening <- ymd_hms("2022-05-24 06:30:00")
 bond_st_opening <- ymd_hms("2022-10-24 06:30:00")
