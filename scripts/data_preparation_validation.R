@@ -64,3 +64,6 @@ for(i in 1:5){
 
 save(KCL_validated, file=here("data", "processed", "KCL_validated_sites.RData"))
 save(AQE_validated, file=here("data", "processed", "AQE_validated_sites.RData"))
+
+all_validated <- append(KCL_validated, AQE_validated)
+save(all_validated, file=here("data", "processed", "all_validated_sites.RData"))
