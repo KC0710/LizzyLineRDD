@@ -1,4 +1,4 @@
-hvblockedfolds <- function(obs, fix.fraction=0.25, block.size, nfolds=5) {
+hvblockedfolds <- function(obs, block.size, fix.fraction=0.25, nfolds=5) {
   nobs <- NROW(obs)
   split.point <- ceiling(fix.fraction*nobs)
   test.block <- obs[split.point:nobs, ]
@@ -9,7 +9,7 @@ hvblockedfolds <- function(obs, fix.fraction=0.25, block.size, nfolds=5) {
   test.id <- list()
   i <- 1
   while (i <= nfolds) {
-    ts.id <- split.point + indices[which(f == i)]
+    ts.id <- split.point + indices[which(f == i)] - 1
     train.id[[i]] <- 1:(ts.id[1] - block.size - 1)
     test.id[[i]] <- ts.id
     

@@ -296,12 +296,12 @@ gbm.cverr <- function(
 
     # Begin cross-validation
     cv.err <- 
-      parallel::mclapply(1:nfolds, mc.cores = n.cores, FUN = function(fld){
-        
+      #parallel::mclapply(1:nfolds, mc.cores = n.cores, FUN = function(fld){
+      lapply(1:nfolds, FUN = function(fld){
         # Training and test indices for this fold
+        print("testfld")
         test <- cv.test.folds[[fld]]
         train <- cv.train.folds[[fld]]
-        
         # Fit the model to the training data using the initial number of folds
         set.seed(fld)
         mm.cv <- gbm::gbm.fit(x[train, ],
@@ -326,17 +326,16 @@ gbm.cverr <- function(
         
         # Get test error
         ytest.cv <- y[test]
-        wtest.cv <- rep(1, length(test)) #w[test]
+        wtest.cv <- rep(1, length(ytest.cv)) #w[test]
         fx.cv <-
-          predict(mm.cv, newdata = x[test,], n.trees = n.trees) 
+          predict(mm.cv, newdata = x[test,], n.trees = n.trees)
+        err <- loss(fx.cv, yobs = ytest.cv, wt = wtest.cv, distrb = distribution)
         
-        err <-  loss(fx.cv, yobs = ytest.cv, wt = wtest.cv, distrb = distribution)
-        
+        if (is.na(err)) stop("Stopping. Error is NA.")
         return(list(err = err, mm.cv = mm.cv))
-     
     })
-    
     # Compute CV error across folds
+    print(cv.err)
     err <- Reduce('+', lapply(cv.err, FUN = function(err){err[[1]]})) / 
       length(cv.err)
     

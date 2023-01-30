@@ -14,6 +14,8 @@ sites <- sites.valid.coordinates %>% select(-OpeningDate,
                                             -SamplingPoint,
                                             -Countrycode)
 
+# Site Data -------------------
+
 KCL_list_files <- list.files(path=here("data", "processed", "02_Candidate_R_data"),
                              pattern="00.*KCL.*\\.pickle", full.names=TRUE)
 AQE_list_files <- list.files(path=here("data", "processed", "02_Candidate_R_data"),
@@ -67,3 +69,20 @@ save(AQE_validated, file=here("data", "processed", "AQE_validated_sites.RData"))
 
 all_validated <- append(KCL_validated, AQE_validated)
 save(all_validated, file=here("data", "processed", "all_validated_sites.RData"))
+
+# Weather Data -----------------------
+
+meteo_data <- read.csv(here("data",
+                            "processed",
+                            "00_average_across_Sites_2018_2022_year_month_day_hour.csv"))
+meteo_data <- meteo_data %>% rename(Year = year, Month = month, Day = day, Hour = hour)
+MOL <- read.csv(here("data",
+                     "processed",
+                     "00_LDN_2018_2022_MOL_result.csv"))
+
+meteo_full <- merge(meteo_data, MOL,
+                    by = c("Year", "Month", "Day", "Hour")) %>% 
+  arrange(Year, Month, Day, Hour) %>%
+  mutate(date = ymd_h(paste(Year, Month, Day, Hour, sep = " ")))
+
+save(meteo_full, file=here("data", "processed", "meteo_full.RData"))
