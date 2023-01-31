@@ -22,10 +22,11 @@ run_hyperparameter_optimisation <- function(aq.dat, meteo.data){
                        FUN=gbm_inputs,
                        meteo.data)
   
-  lapply(gbm_inputs, FUN=function(lst) {bayes_optimise(lst$modmat,
-                                                       lst$yobs,
-                                                       lst$test.id,
-                                                       lst$train.id)})
+  run <- lapply(gbm_inputs, FUN=function(input) {bayes_optimise(input$modmat,
+                                                                input$yobs,
+                                                                input$test.id,
+                                                                input$train.id)})
+  return(run)
 }
 
 
