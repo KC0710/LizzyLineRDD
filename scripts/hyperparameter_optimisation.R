@@ -6,7 +6,10 @@ gbm_inputs <- function(aq.dat, meteo.data){
            -Latitude, -Longitude, -Site) %>% tidyr::drop_na()
   
   yobs <- aq.dat_m$Value
+  print(yobs)
   X <- model.matrix(Value ~ . -1, aq.dat_m)
+  
+  print(X)
   
   cv.folds <- hvblockedfolds(X, block.size=48)
   cv.train.folds <- cv.folds$train.id

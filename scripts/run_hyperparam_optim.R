@@ -1,5 +1,4 @@
 library(here)
-library(smoof)
 library(mlrMBO)
 library(deweather)
 library(dplyr)
@@ -10,6 +9,7 @@ source(here("scripts", "bayes_optimise.R"))
 source(here("scripts", "hvblockedfolds.R"))
 source(here("scripts", "gbm.cverr.R"))
 source(here("scripts", "hyperparameter_optimisation.R"))
+
 load(here("data", "processed", "all_validated_sites.RData"))
 load(here("data", "processed", "meteo_full.RData"))
 
@@ -19,7 +19,11 @@ meteo_seasonality <- prepData(meteo_full, add=seasonality_vars) %>%
          -wd_cos, -wd_sin, -wd_math,
          -dew_point, -ceil_hgt, -visibility)
 
-optim_runs_by_site <- lapply(all_validated_sites,
+m <- lapply(all_validated, FUN=function(x) min(x$DateTime)) #these throw up an error so
+m_ind <- which(year(do.call("c", m)) == 2022)
+all_validated_nm <- all_validated[-m_ind]
+
+optim_runs_by_site <- lapply(all_validated,
                              FUN=run_hyperparameter_optimisation,
                              meteo_seasonality)
 

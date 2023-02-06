@@ -18,7 +18,7 @@ do_bayes <- function(n_design = NULL, opt_steps = NULL, of = obj.fun, seed = 42)
   return(run)
 }
 
-bayes_optimise <- function(X, obs, test.folds, train.folds, n.trees=1000, n_design=40, opt_steps=35, n.cores=6, seed=42){
+bayes_optimise <- function(X, obs, test.folds, train.folds, n.trees=1000, n_design=40, opt_steps=30, n.cores=6, seed=42){
   
   obj.fun <- makeSingleObjectiveFunction(
     name = "gbm_cv_bayes",
